@@ -169,3 +169,8 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+/devel/
+/tmp/
+/fribidi-src/
+/src/rlbidi_version.h

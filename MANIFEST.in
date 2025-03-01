@@ -1,0 +1,4 @@
+prune fribidi-src/
+prune dist/
+prune devel/
+prune tmp/

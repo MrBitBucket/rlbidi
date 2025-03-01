@@ -1,0 +1,6 @@
+20250301	0.0.1
+			copied from https://pyfribidi.sourceforge.net/
+			setup.py sdist & pip wheel -w dist . work
+			test_rlbidi.py
+
+

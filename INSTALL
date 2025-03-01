@@ -1,0 +1,25 @@
+Windows Build
+1) Down load the version of fribidi you intend to build from and
+untar into a folder parallel to this one. I used fribidi-0.19.6
+Either rename this folder to fribidi-src or create a link to the
+one you downloaded eg
+   cd .. && junction fribidi-src fribidi-0.19.6
+
+2) Edit win/fribidi-config.h to reflect the correct version.
+
+3) run vcvarsall.bat for the C platform you intend building for.
+
+4) run the win/build.vbs script it should produce a build.out text
+file containing messages from the script.
+
+5) Assuming 4 worked you now have a configured fribidi source area.
+build the extension module using
+	python setup.py build
+
+
+linux build
+===========
+We don't use setup.py we now have pyproject.toml
+
+python setup.py sdist
+pip wheel -w dist .
