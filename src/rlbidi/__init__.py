@@ -39,7 +39,7 @@ def log2vis(logical, base_direction=RTL, encoding="utf-8", clean=True, reorderns
     - encoding: optional string encoding (ignored for unicode input)
     """
     if isinstance(base_direction,str):
-        _ = bidiDirMap.get(base_direction.upper(),ON)
+        _ = bidiDirMap.get(base_direction.upper(),None)
         if _ is None:
             raise ValueError(f'argument base_direction={base_direction} is invalid; should be one of ({", ".join(bidiDirMap.keys())})')
         else:
