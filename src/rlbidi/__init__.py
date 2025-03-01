@@ -4,7 +4,7 @@ rlbidi uses libfribidi to order text visually using the unicode
 algorithm. rlbidi can also convert text from visual order to
 logical order, but the conversion may be wrong in certain cases.
 """
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 __all__ = ('log2vis', 'reorderMap', 'LTR', 'ON', 'RTL', 'WLTR', 'WRTL',
            'rlbidiVersion', 'fribidiVersion', 'fribidiInterfaceVersion',
            'fribidiUnicodeVersion', '_log2vis', 'bidiDirMap',

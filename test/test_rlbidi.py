@@ -192,6 +192,24 @@ class Crasher(unittest.TestCase):
         # *** glibc detected *** /home/ralf/py27/bin/python2: free(): invalid next size (fast): 0x00000000011cff00 ***
         rlbidi.log2vis(b'\\xf0\\x90\\x8e\\xa2\\xf0\\x90\\x8e\\xaf\\xf0\\x90\\x8e\\xb4\\xf0\\x90\\x8e\\xa1\\xf0\\x90\\x8f\\x83')
 
+class ROMapTests(unittest.TestCase):
+    def test_call(self):
+        V2L = [1,2,3]
+        L2V = ['a','b','c']
+        logical = b'\xd8\xb5\xd9\x90\xd8\xb1\xd9\x8e\xd8\xa7\xd8\xb7\xd9\x8e \xd8\xa7\xd9\x84\xd9\x91\xd9\x8e\xd8\xb0\xd9\x90\xd9\x8a\xd9\x86\xd9\x8e \xd8\xa7\xd9\x8e\xd9\x86\xd9\x92\xd8\xb9\xd9\x8e\xd9\x85\xd9\x92\xd8\xaa\xd9\x8e \xd8\xb9\xd9\x8e\xd9\x84\xd9\x8e\xd9\x8a\xd9\x87\xd9\x90\xd9\x85\xd9\x92 \xd8\xba\xd9\x8e\xd9\x8a\xd9\x92\xd8\xb1\xd9\x90 \xd8\xa7\xd9\x84\xd9\x92\xd9\x85\xd9\x8e\xd8\xba\xd9\x92\xd8\xb6\xd9\x8f\xd9\x88\xd8\xa8\xd9\x90 \xd8\xb9\xd9\x8e\xd9\x84\xd9\x8e\xd9\x8a\xd9\x92\xd9\x87\xd9\x90\xd9\x85 \xd9\x88\xd9\x8e \xd9\x84\xd9\x8e\xd8\xa7 \xd8\xa7\xd9\x84\xd8\xb6\xd9\x91\xd9\x8e\xd9\x93\xd8\xa7\xd9\x84\xd9\x91\xd9\x90\xd9\x8a\xd9\x86\xd9\x8e'
+        visual = rlbidi.log2vis(logical, positions_L_to_V=L2V, positions_V_to_L=V2L, clean=True)
+        #print(f'{L2V=}\n{V2L=}')
+
+        om = rlbidi.reorderMap(logical)
+        #print(f'{ om=}')
+
+class BWLTests(unittest.TestCase):
+    words0 = '\u0627\u0644\u0631\u064a\u0627\u0636 \u0647\u0648 \u0641\u0631\u064a\u0642 \u0643\u0631\u0629 \u0642\u062f\u0645 \u0639\u0631\u0628\u064a \u064a\u0636\u0645 123 \u0644\u0627\u0639\u0628\u064b\u0627 \u0628\u0627\u0647\u0638 \u0627\u0644\u062b\u0645\u0646'.split()
+    words0 = 'الرياض هو فريق كرة قدم عربي يضم 123 لاعبًا باهظ الثمن'.split()
+
+    def test_making_words(self):
+        bwl = rlbidi.bidiWordList(self.words0)
+
 if __name__ == '__main__':
     suite = unittest.defaultTestLoader.loadTestsFromName(__name__)
     res = unittest.TextTestRunner().run(suite)

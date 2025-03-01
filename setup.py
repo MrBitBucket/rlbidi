@@ -15,6 +15,16 @@ def lineList(L):
 def lineListDir(d):
     return lineList(os.listdir(d))
 
+def sprun(args):
+    if verbose:
+        print(f'##### about to execute\n  {" ".join(args)}')
+    try:
+        subprocess.run(args)
+    except:
+        t,e,b = sys.exc_info()
+        print(f'!!!!! {args[0]} raised {e}')
+        raise
+
 options = {}
 install_requires = []
 ext_modules = []
@@ -37,6 +47,9 @@ elif setup_py and 'clean' in sys.argv:
         if isdir(d):
             if verbose: print(f'##### shutil.rmtree({d!r})')
             shutil.rmtree(d)
+    sys.exit(0)
+elif setup_py and 'test' in sys.argv:
+    sprun((sys.executable,pjoin('test','test_rlbidi.py')))
     sys.exit(0)
 elif setup_py and 'sdist' in sys.argv:
     data_files = [_rlbidi_c]
@@ -74,15 +87,6 @@ else:
     def locationValueError(msg):
         print('!!!!! %s\nls(%r)\n%s\n!!!!!''' % (msg,cwd,lineListDir(cwd)))
         raise ValueError(msg)
-
-    def sprun(args):
-        print(f'##### about to execute\n  {" ".join(args)}')
-        try:
-            subprocess.run(args)
-        except:
-            t,e,b = sys.exc_info()
-            print(f'!!!!! {args[0]} raised {e}')
-            raise
 
     def setupFribidiSrc(target):
         from dulwich import porcelain

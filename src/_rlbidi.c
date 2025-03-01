@@ -57,13 +57,28 @@ static PyObject *DeletePyList(PyObject *L){
 	return NULL;
 }
 
-static PyObject *unicode_log2vis(PyObject* u,
-								FriBidiParType base_direction,
-								int clean, int reordernsm,
-								PyObject *positions_L_to_V,
-								PyObject *positions_V_to_L,
-								PyObject *embedding_levels
-								){
+static PyObject * _rlbidi_log2vis(PyObject * self, PyObject * args, PyObject * kw){
+	PyObject *u=NULL;	/* input unicode or string object */
+	FriBidiParType base = FRIBIDI_TYPE_RTL;	/* optional direction */
+	PyObject *positions_L_to_V=NULL, *positions_V_to_L=NULL, *embedding_levels=NULL;
+	int clean = 0; /* optional flag to clean the string */
+	int reordernsm = 1; /* optional flag to allow reordering of non spacing marks*/
+
+	static char *kwargs[] = { "logical", "base_direction", "clean", "reordernsm", "positions_L_to_V", "positions_V_to_L", "embedding_levels", NULL };
+
+	if(!PyArg_ParseTupleAndKeywords(args, kw, "U|iiiOOO", kwargs,
+				&u, &base, &clean, &reordernsm, &positions_L_to_V, &positions_V_to_L, &embedding_levels)
+			) return NULL;
+
+	/* Validate base */
+	if(!(base == (FriBidiParType)FRIBIDI_TYPE_RTL
+	  || base == (FriBidiParType)FRIBIDI_TYPE_LTR
+	  || base == (FriBidiParType)FRIBIDI_TYPE_ON
+	  || base == (FriBidiParType)FRIBIDI_TYPE_WRTL
+	  || base == (FriBidiParType)FRIBIDI_TYPE_WLTR
+	  ))
+		return PyErr_Format(PyExc_ValueError, "invalid value %d: use either RTL, LTR or ON", base);
+
 	Py_ssize_t length = RLPYUNICODE_GETLENGTH(u), i;
 	FriBidiChar *logical = NULL;	/* input fribidi unicode buffer */
 	FriBidiChar *visual = NULL;		/* output fribidi unicode buffer */
@@ -110,7 +125,7 @@ static PyObject *unicode_log2vis(PyObject* u,
 	/* Convert to unicode and order visually */
 	fribidi_set_reorder_nsm(reordernsm);
 
-	if(!fribidi_log2vis(logical, (const FriBidiStrIndex)length, &base_direction, visual, L_to_V, V_to_L, levels)){
+	if(!fribidi_log2vis(logical, (const FriBidiStrIndex)length, &base, visual, L_to_V, V_to_L, levels)){
 		PyErr_SetString(PyExc_RuntimeError, "fribidi failed to order string");
 		goto cleanup;
 		}
@@ -158,34 +173,8 @@ cleanup:
 	return (PyObject *)result;
 	}
 
-static PyObject * _rlbidi_log2vis(PyObject * self, PyObject * args, PyObject * kw){
-	PyObject *logical=NULL;	/* input unicode or string object */
-	FriBidiParType base = FRIBIDI_TYPE_RTL;	/* optional direction */
-	PyObject *positions_L_to_V=NULL, *positions_V_to_L=NULL, *embedding_levels=NULL;
-	int clean = 0; /* optional flag to clean the string */
-	int reordernsm = 1; /* optional flag to allow reordering of non spacing marks*/
-
-	static char *kwargs[] = { "logical", "base_direction", "clean", "reordernsm", "positions_L_to_V", "positions_V_to_L", "embedding_levels", NULL };
-
-	if(!PyArg_ParseTupleAndKeywords(args, kw, "U|iiiOOO", kwargs,
-				&logical, &base, &clean, &reordernsm, &positions_L_to_V, &positions_V_to_L, &embedding_levels)
-			) return NULL;
-
-	/* Validate base */
-	if(!(base == (FriBidiParType)FRIBIDI_TYPE_RTL
-	  || base == (FriBidiParType)FRIBIDI_TYPE_LTR
-	  || base == (FriBidiParType)FRIBIDI_TYPE_ON
-	  || base == (FriBidiParType)FRIBIDI_TYPE_WRTL
-	  || base == (FriBidiParType)FRIBIDI_TYPE_WLTR
-	  ))
-		return PyErr_Format(PyExc_ValueError, "invalid value %d: use either RTL, LTR or ON", base);
-
-	return unicode_log2vis(logical, base, clean, reordernsm, positions_L_to_V, positions_V_to_L,
-													embedding_levels);
-	}
-
 PyObject *_rlbidi_reorderMap(PyObject * self, PyObject * args){
-	PyObject *u;
+	PyObject *u, *roMapList=NULL, *obj;
 	if(!PyArg_ParseTuple(args, "U", &u)) return NULL;
 
 	FriBidiChar *logical = NULL;	/* input fribidi unicode buffer */
@@ -246,7 +235,7 @@ PyObject *_rlbidi_reorderMap(PyObject * self, PyObject * args){
 	fribidi_get_bidi_types(logical, length, cTypes);
 
 	FriBidiParType baseDirection = FRIBIDI_PAR_LTR;
-	FriBidiLevel   resolveParDir = fribidi_get_par_embedding_levels(cTypes, length, &baseDirection, levels);
+	FriBidiLevel   Py_UNUSED(resolveParDir) = fribidi_get_par_embedding_levels(cTypes, length, &baseDirection, levels);
 
 	// joine types.
 	fribidi_get_joining_types(logical, length, jTypes);
@@ -264,11 +253,10 @@ PyObject *_rlbidi_reorderMap(PyObject * self, PyObject * args){
 		roMap[i] = i;
 	}
 
-	FriBidiLevel _levels = fribidi_reorder_line(FRIBIDI_FLAGS_ARABIC, cTypes, length,
+	FriBidiLevel Py_UNUSED(_levels) = fribidi_reorder_line(FRIBIDI_FLAGS_ARABIC, cTypes, length,
 											0, baseDirection,  levels, visual, roMap);
 
-	PyObject *roMapList = PyList_New(0), *obj;
-	if(!roMapList) goto cleanup;
+	if(!(roMapList=PyList_New(0))) goto cleanup;
 	for(i=0;i<length;i++){
 		if(!(obj = PyLong_FromLong((long)roMap[i]))) goto cleanup1;
 		r = PyList_Append(roMapList,obj);
