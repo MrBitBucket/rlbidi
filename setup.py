@@ -39,6 +39,7 @@ if setup_py and 'help' in sys.argv:
     python setup.py sdist to make a source distro
     pip wheel -w dist . [-v] to make a wheel
     pip install --editable . to install for developing
+    python setup.py test to run tests
 ''')
     sys.exit(0)
 elif setup_py and 'clean' in sys.argv:

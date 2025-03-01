@@ -1,6 +1,7 @@
 20250301	0.0.2
 			fix string base_direction error check
 			remove unwanted extra layer of C functions
+			added setup.py test subcommand
 20250301	0.0.1
 			copied from https://pyfribidi.sourceforge.net/
 			setup.py sdist & pip wheel -w dist . work
