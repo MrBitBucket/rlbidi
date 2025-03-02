@@ -109,6 +109,16 @@ else:
     if cibuildwheel:
         bfDir = bfName(ext_modules=[Extension("",[])], options=options)
 
+    def win_patches():
+        config_h = pjoin(fribidi_src,bfDir,'config.h')
+        with open(config_h,'r') as _:
+            text = _.read()
+        if bfDir.endswith('-win32'):
+            text = text.replace('#define HAVE_STRINGS_H\n','#undef HAVE_STRINGS_H\n')
+            text = text.replace('#define STDC_HEADERS 1','')
+        with open(config_h,'w') as _:
+            _.write(text)
+
     def setupFribidiSrc(target, existing=False):
         install_requires.extend(['dulwich','meson','ninja'])
         if not existing:
@@ -121,6 +131,7 @@ else:
         try:
             sprun(['meson','setup','-Ddocs=false','--backend=ninja',bfDir,'--wipe'])
             sprun(['ninja','-C',bfDir,'test'])
+            if bfDir.endswith('-win32'): win_patches()
         finally:
             os.chdir(cwd)
 
