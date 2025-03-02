@@ -15,6 +15,10 @@ def lineList(L):
 def lineListDir(d):
     return lineList(os.listdir(d))
 
+def cat(fn):
+    with open(fn,'r') as _:
+        return _.read()
+
 def sprun(args):
     if verbose:
         print(f'##### about to execute\n  {" ".join(args)}')
@@ -94,7 +98,7 @@ else:
         if not existing:
             from dulwich import porcelain
             refspecs=[b'cfc71cda065db859d8b4f1e3c6fe5da7ab02469a']
-            print(f'porcelain.clone("https://github.com/fribidi/fribidi,{target},{refspecs=})')
+            print(f'##### porcelain.clone("https://github.com/fribidi/fribidi,{target},{refspecs=})')
             porcelain.clone("https://github.com/fribidi/fribidi", target, refspecs=refspecs)
         cwd = os.getcwd()
         os.chdir(target)
@@ -128,7 +132,7 @@ else:
 
     fribidi_src = getFribidiSrc()
     if verbose:
-        print("+++++ fribidi_src=%r\n+++++ rlbidi_src=%r" % (fribidi_src,rlbidi_src))
+        print("##### fribidi_src=%r\n##### rlbidi_src=%r" % (fribidi_src,rlbidi_src))
 
     meson_lib = pjoin(fribidi_src,'build','lib')
     def getIncludeDirs():
@@ -143,19 +147,25 @@ else:
                         I.append(gen)
                     return I
         locationValueError('''Cannot locate a suitable config.h file.
-        meson setup -Ddocs=false --backend=ninja build
+        meson setup -Ddocs=false --backend=ninja build --wipe
         ninja -C build test
     or
         ./autogen.sh
         ./configure''')
-    include_dirs = getIncludeDirs() + [pjoin(fribidi_src,"lib"),pjoin(fribidi_src,'gen.tab'),rlbidi_src]
+    include_dirs = getIncludeDirs()
     if verbose:
-        print("+++++ include_dirs=%s" % lineList(include_dirs))
+        print("##### include_dirs=%s" % lineList(include_dirs))
+        if verbose>2:
+            config_h = pjoin(fribidi_src,'build','config.h')
+            if isfile(config_h):
+                print(f'##### {config_h} start\n{cat(config_h)}\n##### {config_h} end')
+            else:
+                print(f'!!!!! {config_h} not found')
 
     if isdir(meson_lib):
         if sys.platform=='win32':
             if verbose:
-                print('+++++ meson_lib ls(%r)\n%s' % (meson_lib,lineListDir(meson_lib)))
+                print('##### meson_lib ls(%r)\n%s' % (meson_lib,lineListDir(meson_lib)))
             meson_lib = pjoin(meson_lib,'fribidi.lib')
         else:
             meson_lib = pjoin(meson_lib,'libfribidi.a')
@@ -171,7 +181,7 @@ else:
         extra_objects = [meson_lib]
         lib_sources = []
         if verbose:
-            print('+++++ using static libraries %s' % lineList(libraries))
+            print('##### using static libraries %s' % lineList(libraries))
     else:
         extra_objects = []
         lib_sources = [pjoin(fribidi_src,p) for p in """
