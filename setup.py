@@ -152,7 +152,7 @@ else:
     or
         ./autogen.sh
         ./configure''')
-    include_dirs = getIncludeDirs()
+    include_dirs = getIncludeDirs() + [_ for _ in (pjoin(fribidi_src,"lib"),pjoin(fribidi_src,'gen.tab'),rlbidi_src) is isdir(_)]
     if verbose:
         print("##### include_dirs=%s" % lineList(include_dirs))
         if verbose>2:
