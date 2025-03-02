@@ -89,15 +89,19 @@ else:
         print('!!!!! %s\nls(%r)\n%s\n!!!!!''' % (msg,cwd,lineListDir(cwd)))
         raise ValueError(msg)
 
-    def setupFribidiSrc(target):
-        from dulwich import porcelain
+    def setupFribidiSrc(target, existing=False):
         install_requires.extend(['dulwich','meson','ninja'])
-        porcelain.clone("https://github.com/fribidi/fribidi", target,
+        if not existing:
+            from dulwich import porcelain
+            porcelain.clone("https://github.com/fribidi/fribidi", target,
                   refspecs=[b'cfc71cda065db859d8b4f1e3c6fe5da7ab02469a'])
+            xtraBuildArgs = []
+        else:
+            xtraBuildArgs = ['--wipe']
         cwd = os.getcwd()
         os.chdir(target)
         try:
-            sprun(['meson','setup','-Ddocs=false','--backend=ninja','build'])
+            sprun(['meson','setup','-Ddocs=false','--backend=ninja','build'] + xtraBuildArgs)
             sprun(['ninja','-C','build','test'])
         finally:
             os.chdir(cwd)
@@ -113,6 +117,8 @@ else:
                     setupFribidiSrc(target)
                 else:
                     print(f'##### using existing directory {target!r}')
+                    setupFribidiSrc(target, existing=True)
+
             else:
                 setupFribidiSrc(target)
         except:
