@@ -1,5 +1,5 @@
 from setuptools import setup, Extension, find_packages
-import sys, os, subprocess, shutil
+import sys, os, subprocess, shutil, glob
 
 pjoin=os.path.join
 dirname=os.path.dirname
@@ -8,6 +8,7 @@ isfile = os.path.isfile
 isdir = os.path.isdir
 verbose=int(os.environ.get("SETUP_VERBOSE","0"))
 limited_abi = int(os.environ.get('LIMITED_ABI','38'))
+cibuildwheel = os.environ.get('CIBUILDWHEEL','')=='1'
 
 def lineList(L):
     return '\n     '+('\n     '.join((repr(_) for _ in L)))
@@ -36,6 +37,7 @@ data_files = []
 setup_py = sys.argv[0]=='setup.py'
 rlbidi_src = 'src'
 _rlbidi_c = pjoin(rlbidi_src,'_rlbidi.c')
+bfDir = 'build'
 if setup_py and 'help' in sys.argv:
     print('''
     python setup.py clean remove fribidi-src, build & dist
@@ -47,8 +49,7 @@ if setup_py and 'help' in sys.argv:
 ''')
     sys.exit(0)
 elif setup_py and 'clean' in sys.argv:
-    for d in 'fribidi-src build dist'.split():
-        d = pjoin(dirname(__file__),d)
+    for d in 'fribidi-src dist build'.split():
         if isdir(d):
             if verbose: print(f'##### shutil.rmtree({d!r})')
             shutil.rmtree(d)
@@ -93,6 +94,21 @@ else:
         print('!!!!! %s\nls(%r)\n%s\n!!!!!''' % (msg,cwd,lineListDir(cwd)))
         raise ValueError(msg)
 
+    def bfName(**kwargs):
+        from setuptools.dist import Distribution
+        # create a fake distribution from arguments
+        dist = Distribution(attrs=kwargs)
+        # finalize bdist_wheel command
+        bdist_wheel_cmd = dist.get_command_obj('bdist_wheel')
+        bdist_wheel_cmd.ensure_finalized()
+        # wheel file name
+        #distname = bdist_wheel_cmd.wheel_dist_name
+        tag = '-'.join(bdist_wheel_cmd.get_tag())
+        return f'build-{tag}'
+
+    if cibuildwheel:
+        bfDir = bfName(ext_modules=[Extension("",[])], options=options)
+
     def setupFribidiSrc(target, existing=False):
         install_requires.extend(['dulwich','meson','ninja'])
         if not existing:
@@ -103,13 +119,13 @@ else:
         cwd = os.getcwd()
         os.chdir(target)
         try:
-            sprun(['meson','setup','-Ddocs=false','--backend=ninja','build','--wipe'])
-            sprun(['ninja','-C','build','test'])
+            sprun(['meson','setup','-Ddocs=false','--backend=ninja',bfDir,'--wipe'])
+            sprun(['ninja','-C',bfDir,'test'])
         finally:
             os.chdir(cwd)
 
     def getFribidiSrc():
-        print(f'##### attempting git clone and meson/ninja build in {os.getcwd()}')
+        print(f'##### attempting git clone and meson/ninja {bfDir} in {os.getcwd()}')
         try:
             target = 'fribidi-src'
             if os.path.isdir(target):
@@ -134,9 +150,9 @@ else:
     if verbose:
         print("##### fribidi_src=%r\n##### rlbidi_src=%r" % (fribidi_src,rlbidi_src))
 
-    meson_lib = pjoin(fribidi_src,'build','lib')
+    meson_lib = pjoin(fribidi_src,bfDir,'lib')
     def getIncludeDirs():
-        for _top in ('build',None):
+        for _top in (bfDir,None):
             top = pjoin(fribidi_src,_top) if _top else fribidi_src
             lib = pjoin(top,'lib')
             if isfile(pjoin(top,'config.h')) and isfile(pjoin(lib,'fribidi-config.h')):
@@ -146,9 +162,9 @@ else:
                     if isfile(pjoin(gen,'fribidi-unicode-version.h')):
                         I.append(gen)
                     return I
-        locationValueError('''Cannot locate a suitable config.h file.
-        meson setup -Ddocs=false --backend=ninja build --wipe
-        ninja -C build test
+        locationValueError(f'''Cannot locate a suitable config.h file.
+        meson setup -Ddocs=false --backend=ninja {bfDir} --wipe
+        ninja -C {bfDir} test
     or
         ./autogen.sh
         ./configure''')
@@ -156,7 +172,7 @@ else:
     if verbose:
         print("##### include_dirs=%s" % lineList(include_dirs))
         if verbose>2:
-            config_h = pjoin(fribidi_src,'build','config.h')
+            config_h = pjoin(fribidi_src,bfDir,'config.h')
             if isfile(config_h):
                 print(f'##### {config_h} start\n{cat(config_h)}\n##### {config_h} end')
             else:
