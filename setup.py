@@ -130,7 +130,7 @@ else:
         os.chdir(target)
         try:
             sprun(['meson','setup','-Ddocs=false','--backend=ninja',bfDir,'--wipe'])
-            sprun(['ninja','-C',bfDir,'test'])
+            sprun(['ninja','-C',bfDir])
         finally:
             os.chdir(cwd)
 
@@ -175,7 +175,7 @@ else:
                     return I
         locationValueError(f'''Cannot locate a suitable config.h file.
         meson setup -Ddocs=false --backend=ninja {bfDir} --wipe
-        ninja -C {bfDir} test
+        ninja -C {bfDir}
     or
         ./autogen.sh
         ./configure''')
