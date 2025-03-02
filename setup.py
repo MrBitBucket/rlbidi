@@ -131,7 +131,6 @@ else:
         try:
             sprun(['meson','setup','-Ddocs=false','--backend=ninja',bfDir,'--wipe'])
             sprun(['ninja','-C',bfDir,'test'])
-            if bfDir.endswith('-win32'): win_patches()
         finally:
             os.chdir(cwd)
 
@@ -158,6 +157,7 @@ else:
             return target
 
     fribidi_src = getFribidiSrc()
+    if bfDir.endswith('-win32'): win_patches()
     if verbose:
         print("##### fribidi_src=%r\n##### rlbidi_src=%r" % (fribidi_src,rlbidi_src))
 
