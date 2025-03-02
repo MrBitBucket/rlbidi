@@ -93,28 +93,26 @@ else:
         install_requires.extend(['dulwich','meson','ninja'])
         if not existing:
             from dulwich import porcelain
-            porcelain.clone("https://github.com/fribidi/fribidi", target,
-                  refspecs=[b'cfc71cda065db859d8b4f1e3c6fe5da7ab02469a'])
-            xtraBuildArgs = []
-        else:
-            xtraBuildArgs = ['--wipe']
+            refspecs=[b'cfc71cda065db859d8b4f1e3c6fe5da7ab02469a']
+            print(f'porcelain.clone("https://github.com/fribidi/fribidi,{target},{refspecs=})')
+            porcelain.clone("https://github.com/fribidi/fribidi", target, refspecs=refspecs)
         cwd = os.getcwd()
         os.chdir(target)
         try:
-            sprun(['meson','setup','-Ddocs=false','--backend=ninja','build'] + xtraBuildArgs)
+            sprun(['meson','setup','-Ddocs=false','--backend=ninja','build','--wipe'])
             sprun(['ninja','-C','build','test'])
         finally:
             os.chdir(cwd)
 
     def getFribidiSrc():
-        print(f'##### attempting git clone an meson/ninja build in {os.getcwd()}')
+        print(f'##### attempting git clone and meson/ninja build in {os.getcwd()}')
         try:
             target = 'fribidi-src'
             if os.path.isdir(target):
                 if int(os.environ.get('CLEAN_FRIBIDI','0'))>=1:
                     shutil.rmtree(target)
                     print(f'##### removed existing directory {target!r}')
-                    setupFribidiSrc(target)
+                    setupFribidiSrc(target,existing=True)
                 else:
                     print(f'##### using existing directory {target!r}')
                     setupFribidiSrc(target, existing=True)
