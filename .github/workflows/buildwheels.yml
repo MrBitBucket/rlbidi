@@ -28,7 +28,7 @@ jobs:
             python -mpip install --no-cache https://hg.reportlab.com/hg-public/rl-ci-tools/archive/tip.tar.gz -U
             python -mrl_ci_tools clear-cache "${{ github.event.repository.name }}"
             echo "cleared remote cache for ${{ github.event.repository.name }}"
-  build-wheels-linux-mac-windows:
+  build-wheels-linux-mac:
     needs: [clear-cache]
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -82,10 +82,67 @@ jobs:
           python -mrl_ci_tools upload-caches --subdir='${{ github.event.repository.name }}' --verbosity=1 ./wheelhouse/*.whl
           python -mrl_ci_tools env-upload
 
+  build-wheels-windows:
+    needs: [clear-cache]
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    env:
+      CIBW_TEST_SKIP: "*"
+      CIBW_TEST_COMMAND: ""
+      CIBW_BUILD_VERBOSITY: 3
+      CIBW_PRERELEASE_PYTHONS: True
+      RL_CACHE_DIR: "/tmp/${{github.event.repository.name}}"
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build 64 bit wheel
+        uses: pypa/cibuildwheel@v2.22.0
+        env:
+          SETUP_VERBOSE: 3
+          CIBW_BUILD: cp313*-win_amd64
+          DISTUTILS_USE_SDK: 1
+          MSSdk: 1
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+
+      - name: Build 32 bit wheel
+        uses: pypa/cibuildwheel@v2.22.0
+        env:
+          SETUP_VERBOSE: 3
+          CIBW_BUILD: cp313*-win32
+          DISTUTILS_USE_SDK: 1
+          MSSdk: 1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "${{ github.event.repository.name }}-${{ matrix.os }}-${{ strategy.job-index }}"
+          path: ./wheelhouse/*.whl
+
+      - name: upload wheels
+        env:
+          CITOOLS_USER: "${{secrets.CITOOLS_USER}}"
+          CITOOLS_PASSWORD: "${{secrets.CITOOLS_PASSWORD}}"
+        run: |
+          python -mpip install --no-cache https://hg.reportlab.com/hg-public/rl-ci-tools/archive/tip.tar.gz -U
+          python -mrl_ci_tools upload-caches --subdir='${{ github.event.repository.name }}' --verbosity=1 ./wheelhouse/*.whl
+          python -mrl_ci_tools env-upload
+
   email:
-    #if: github.event.repository.name == 'rlbidi'
     name: email
-    needs: [build-wheels-linux-mac-windows]
+    needs: [build-wheels-linux-mac, build-wheels-windows]
     runs-on: ubuntu-latest
     steps:
       - name: setup python for upload
