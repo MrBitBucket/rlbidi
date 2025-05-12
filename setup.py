@@ -31,14 +31,16 @@ def sprun(args):
         raise
 
 options = {}
-install_requires = []
 ext_modules = []
 data_files = []
 setup_py = sys.argv[0]=='setup.py'
 rlbidi_src = 'src'
 _rlbidi_c = pjoin(rlbidi_src,'_rlbidi.c')
 bfDir = 'build'
-if setup_py and 'help' in sys.argv:
+forceHelp = setup_py and 'bdist_wheel' in sys.argv[1:]
+if forceHelp:
+    print('''!!!!! setup.py bdist_wheel will not work !!!!!\n''')
+if forceHelp or (setup_py and 'help' in sys.argv):
     print('''
     python setup.py clean remove fribidi-src, build & dist
     python setup.py help  to give this help
@@ -47,7 +49,7 @@ if setup_py and 'help' in sys.argv:
     pip install --editable . to install for developing
     python setup.py test to run tests
 ''')
-    sys.exit(0)
+    sys.exit(-1 if forceHelp else 0)
 elif setup_py and 'clean' in sys.argv:
     for d in 'fribidi-src dist build'.split():
         if isdir(d):
@@ -120,7 +122,6 @@ else:
             _.write(text)
 
     def setupFribidiSrc(target, existing=False):
-        install_requires.extend(['dulwich','meson','ninja'])
         if not existing:
             from dulwich import porcelain
             refspecs=[b'cfc71cda065db859d8b4f1e3c6fe5da7ab02469a']
@@ -268,7 +269,7 @@ setup(
     packages = find_packages("src"),
     package_dir = {'': "src"},
     data_files = data_files,
-    install_requires = install_requires,
     extras_require={},
     options = options,
     )
+

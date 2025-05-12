@@ -1,3 +1,6 @@
+20250512	0.1.1
+			remove install_requires from setup.py
+			build with pip wheel -d dist .
 20250307	0.1.0
 			removed reordermap function
 20250301	0.0.2
