@@ -174,3 +174,6 @@ cython_debug/
 /tmp/
 /fribidi-src/
 /src/rlbidi_version.h
+/.hg/
+/.hgeol
+/.hgignore
